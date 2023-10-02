@@ -1,2 +1,2 @@
 # Posture_Influence
-Posture influence website using tensorfflow js
+Posture monitor website using tensorflow js
