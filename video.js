@@ -4,23 +4,13 @@ let poses = [];
 let started = false;
 var audio = document.getElementById("audioElement");
 
-
-
-// js setup() function to set up the canvas for the web cam video stream
 function setup() {
-  //creating a canvas by giving the dimensions
   const canvas = createCanvas(400, 450);
   canvas.parent("video");
 
   videofeed = createCapture(VIDEO);
   videofeed.size(width, height);
-  console.log("setup");
-
-  // setting up the poseNet model to feed in the video feed.
-  // Pose estimation is the task of using an ML model to estimate the pose of a person from 
-  // an image or a video by estimating the spatial locations of key body joints (keypoints).
   posenet = ml5.poseNet(videofeed);
-
   posenet.on("pose", function (results) {
     poses = results;
   });
@@ -29,7 +19,6 @@ function setup() {
   noLoop();
 }
 
-// js draw function() is called after the setup function
 function draw() {
   if (started) {
     image(videofeed, 0, 0, width, height);
@@ -37,72 +26,55 @@ function draw() {
   }
 }
 
-// toggle button for starting the video feed
 function start() {
-  select("#startstop").html("stop");
-  document.getElementById("startstop").addEventListener("click", stop);
+  select("#startstop").html("Stop Monitoring");
+  document.getElementById("startstop").onclick = stop;
   started = true;
   loop();
 }
 
-// toggle button for ending the video feed
 function stop() {
-  select("#startstop").html("start");
-  document.getElementById("startstop").addEventListener("click", start);
+  select("#startstop").html("Start Monitoring");
+  document.getElementById("startstop").onclick = start;
   removeblur();
   started = false;
   noLoop();
 }
 
-// defining the parameters used for the posenet : the tracking of the eyes
-var rightEye,
-  leftEye,
-  defaultRightEyePosition = [],
-  defaultLeftEyePosition = [];
+var rightEye, leftEye;
+var defaultRightEyePosition = [];
+var defaultLeftEyePosition = [];
 
-//function to calculate the position of the various keypoints
 function calEyes() {
   for (let i = 0; i < poses.length; i++) {
     let pose = poses[i].pose;
-    for (let j = 0; j < pose.keypoints.length; j++) {
-      let keypoint = pose.keypoints[j];
-      rightEye = pose.keypoints[2].position;
-      leftEye = pose.keypoints[1].position;
+    rightEye = pose.keypoints[2].position;
+    leftEye = pose.keypoints[1].position;
 
-      // keypoints are the points representing the different joints on the body recognized by posenet
+    if (defaultRightEyePosition.length < 1) {
+      defaultRightEyePosition.push(rightEye.y);
+    }
+    if (defaultLeftEyePosition.length < 1) {
+      defaultLeftEyePosition.push(leftEye.y);
+    }
 
-      while (defaultRightEyePosition.length < 1) {
-        defaultRightEyePosition.push(rightEye.y);
-      }
-
-      while (defaultLeftEyePosition.length < 1) {
-        defaultLeftEyePosition.push(leftEye.y);
-      }
-
-      // if the current position of the body is too far from the original position blur function is called
-      if (Math.abs(rightEye.y - defaultRightEyePosition[0]) > 20) {
-        blur();
-      }
-      if (Math.abs(rightEye.y - defaultRightEyePosition[0]) < 20) {
-        removeblur();
-      }
+    if (Math.abs(rightEye.y - defaultRightEyePosition[0]) > 20) {
+      blur();
+    } else {
+      removeblur();
     }
   }
 }
 
-//function to blur the background and add audio effect
 function blur() {
   document.body.style.filter = "blur(5px)";
   document.body.style.transition = "1s";
   var audio = document.getElementById("audioElement");
-  console.log("change");
-  audio.play();
+  if (audio.paused) audio.play();
 }
 
-//function to remove the blur effect
 function removeblur() {
   document.body.style.filter = "blur(0px)";
   var audio = document.getElementById("audioElement");
-
-  audio.pause();
+  if (!audio.paused) audio.pause();
 }
